@@ -1,11 +1,12 @@
 ```mermaid
+
 flowchart LR
     Client["React Web Application"]
 
     subgraph Backend["Django Modular Monolith"]
-        Security["Session Authentication<br/>CSRF and Owner Authorization"]
 
         subgraph APIs["REST API Components"]
+            Security["API Security<br/>Session Authentication and CSRF"]
             AccountsAPI["Accounts API"]
             ExpensesAPI["Expenses API"]
             ImportAPI["CSV Import API"]
@@ -19,20 +20,18 @@ flowchart LR
             ImportService["CSV Import Service"]
             DashboardService["Budget and Dashboard Service"]
             AIService["AI Service"]
-        end
-
-        subgraph Rules["Domain Components"]
-            ExpenseRules["Expense Validation<br/>and Predefined Categories"]
-            BudgetRules["Budget and Alert Rules"]
-            ConsentPolicy["AI Consent Policy"]
             PromptBuilder["Safe Prompt Builder"]
         end
 
-        subgraph Persistence["Infrastructure Components"]
-            UserRepo["User and Consent Repository"]
-            ExpenseRepo["Expense Repository"]
-            BudgetRepo["Budget Repository"]
-            CSVParser["CSV Parser and<br/>Row Validator"]
+        subgraph Rules["Domain Components"]
+            ExpenseRules["Expense Rules<br/>and Predefined Categories"]
+            BudgetRules["Budget and Alert Rules"]
+            ConsentPolicy["AI Consent Policy"]
+        end
+
+        subgraph Infrastructure["Infrastructure Components"]
+            ORM["Django ORM<br/>Owner-Scoped Data Access"]
+            CSVParser["CSV Parser"]
             LLMAdapter["External LLM Adapter"]
         end
     end
@@ -41,34 +40,38 @@ flowchart LR
     LLM["External LLM API"]
 
     Client --> Security
+
     Security --> AccountsAPI
     Security --> ExpensesAPI
     Security --> ImportAPI
     Security --> DashboardAPI
     Security --> AIAPI
 
-    AccountsAPI --> AccountService --> UserRepo
+    AccountsAPI --> AccountService
     ExpensesAPI --> ExpenseService
-    ExpenseService --> ExpenseRules
-    ExpenseService --> ExpenseRepo
-
     ImportAPI --> ImportService
-    ImportService --> CSVParser
-    CSVParser -->|"Validated rows"| ExpenseService
-
     DashboardAPI --> DashboardService
-    DashboardService --> ExpenseRepo
-    DashboardService --> BudgetRepo
-    DashboardService --> BudgetRules
-
     AIAPI --> AIService
-    AIService --> ConsentPolicy --> UserRepo
-    AIService -->|"Calculated summary"| DashboardService
-    AIService --> PromptBuilder --> LLMAdapter --> LLM
 
-    UserRepo --> DB
-    ExpenseRepo --> DB
-    BudgetRepo --> DB
+    AccountService --> ORM
+
+    ExpenseService --> ExpenseRules
+    ExpenseService --> ORM
+
+    ImportService --> CSVParser
+    ImportService --> ExpenseService
+
+    DashboardService --> BudgetRules
+    DashboardService --> ORM
+
+    AIService --> ConsentPolicy
+    AIService --> ORM
+    AIService -->|"Requests financial summary"| DashboardService
+    AIService --> PromptBuilder
+    AIService --> LLMAdapter
+
+    ORM --> DB
+    LLMAdapter --> LLM
 ```
 
 Figure: Component diagram of the Django modular monolith. Each API component

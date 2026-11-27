@@ -1,34 +1,43 @@
 ```mermaid
+
 flowchart LR
     User["User Browser"]
 
     subgraph Render["Render Web Service"]
-        Web["React Production Build<br/>Browser Interface"]
-        Django["Django and Django REST Framework<br/>Session Authentication and API"]
-        Web --> Django
-    engit d
+        Web["React Production Build"]
+        Django["Django and Django REST Framework"]
+        Env["Environment Variables"]
 
-    subgraph Neon["Neon Managed PostgreSQL"]
-        DB[("Application Database<br/>Users, expenses, budgets,<br/>categories, and AI consent")]
+        Django -->|"Serves frontend"| Web
+        Env -.-> Django
     end
 
-    LLM["External LLM Provider<br/>Advisory explanations only"]
+    subgraph Neon["Neon Managed PostgreSQL"]
+        DB[("Application Database")]
+    end
+
+    LLM["External LLM Provider"]
 
     subgraph GitHub["GitHub"]
         Source["Source Repository"]
-        Actions["GitHub Actions<br/>Tests and daily backup job"]
-        Secrets["Encrypted Secrets<br/>Database URL, API keys,<br/>backup encryption key"]
+        Actions["GitHub Actions"]
+        Secrets["GitHub Actions Secrets"]
+
+        Source --> Actions
+        Secrets -.-> Actions
     end
 
-    Backup["Restricted Backup Storage<br/>Encrypted PostgreSQL dumps<br/>14 day retention"]
+    Backup["Restricted Backup Storage<br/>Encrypted Database Backups<br/>14-Day Retention"]
 
-    User -->|"HTTPS"| Web
-    Django -->|"TLS connection"| DB
-    Django -->|"Consent checked, minimum aggregates"| LLM
-    Source --> Actions
-    Secrets --> Actions
-    Actions -->|"Encrypted daily pg_dump"| DB
-    Actions --> Backup
+    User -->|"HTTPS - Web and API requests"| Django
+    Django -->|"TLS"| DB
+    Django -->|"HTTPS - Consented aggregated data"| LLM
+
+    Source -->|"Application deployment"| Render
+    Actions -->|"Run automated tests"| Source
+    Actions -->|"Daily pg_dump over TLS"| DB
+    Actions -->|"Encrypt and store backup"| Backup
+
 ```
 
 Figure: Proposed Release 1 deployment diagram. The React production build and

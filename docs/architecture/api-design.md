@@ -6,12 +6,22 @@ The server derives the owner from the authenticated session and never accepts a
 user ID from the client.
 
 ```mermaid
+
 flowchart TB
-    Auth["/api/auth/"] --> Account["register, login, logout,<br/>password reset, account deletion"]
-    Finance["/api/"] --> Expenses["expenses and CSV import"]
-    Finance --> Budget["categories and monthly budgets"]
-    Finance --> Dashboard["dashboard, alerts, and summaries"]
-    Finance --> AI["AI consent and assistance"]
+    API["/api/"]
+
+    API --> Auth["/auth/"]
+    API --> Expenses["/expenses/"]
+    API --> Budget["/budgets/ and /categories/"]
+    API --> Dashboard["/dashboard/"]
+    API --> AI["/ai/"]
+
+    Auth --> A["Registration, login, logout,<br/>password reset, account deletion"]
+    Expenses --> E["Expense management<br/>and CSV import"]
+    Budget --> B["Predefined categories<br/>and monthly budgets"]
+    Dashboard --> D["Financial totals, budget alerts,<br/>and monthly summaries"]
+    AI --> I["AI consent, spending explanations,<br/>and AI-generated summaries"]
+
 ```
 
 ## Account access
