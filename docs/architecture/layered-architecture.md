@@ -1,43 +1,47 @@
 ```mermaid
+
 flowchart TB
     subgraph Presentation["Presentation Layer"]
         UI["React Web Application"]
     end
 
-    subgraph Interface["Interface Layer"]
-        API["Django REST API"]
-        Security["Session authentication"]
-    end
 
-    subgraph Application["Application Layer - Django Modular Monolith"]
-        Accounts["Accounts Service"]
-        Expenses["Expenses Service"]
-        Dashboard["Budget and Dashboard Service"]
-        AI["AI Service"]
-    end
+        subgraph Interface["Interface Layer"]
+            API["Django REST API"]
+            Security["Session Authentication and CSRF"]
+        end
 
-    subgraph Domain["Domain Layer"]
-        ExpenseRules["Expense rules"]
-        BudgetRules["Budget & Alert rules"]
-        ConsentRules["AI Consent policy"]
-    end
+        subgraph Application["Application Layer"]
+            Accounts["Account Service"]
+            Expenses["Expense Service"]
+            Import["CSV Import Service"]
+            Dashboard["Budget and Dashboard Service"]
+            AI["AI Service"]
+        end
 
-    subgraph Infrastructure["Infrastructure Layer"]
-        ORM["Django ORM repositories"]
-        CSV["CSV Processing"]
-        LLMAdapter["External LLM adapter"]
-    end
+        subgraph Domain["Domain Layer"]
+            ExpenseRules["Expense Rules"]
+            BudgetRules["Budget and Alert Rules"]
+            ConsentRules["AI Consent Policy"]
+        end
+
+        subgraph Infrastructure["Infrastructure Layer"]
+            ORM["Django ORM"]
+            CSV["CSV Processing"]
+            LLMAdapter["External LLM Adapter"]
+        end
 
     DB[("PostgreSQL Database")]
     LLM["External LLM API"]
 
-    UI --> API
-    API --> Security
-    Security --> Application
+    UI --> Interface
+    Interface --> Application
     Application --> Domain
-    Domain --> Infrastructure
+    Application --> Infrastructure
+
     ORM --> DB
     LLMAdapter --> LLM
+
 
 ```
 

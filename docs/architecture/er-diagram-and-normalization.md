@@ -1,15 +1,16 @@
 ```mermaid
+
 erDiagram
     USER ||--o{ EXPENSE : records
     CATEGORY ||--o{ EXPENSE : classifies
     USER ||--o{ MONTHLY_BUDGET : sets
-    CATEGORY ||--o{ MONTHLY_BUDGET : limits
-    USER ||--|| AI_CONSENT : controls
+    CATEGORY ||--o{ MONTHLY_BUDGET : defines
+    USER ||--o| AI_CONSENT : controls
 
     USER {
         bigint id PK
         string email UK
-        string password_hash
+        string password
         datetime created_at
     }
 
@@ -26,7 +27,7 @@ erDiagram
         bigint category_id FK
         decimal amount
         date occurred_on
-        string description "nullable"
+        string description "Nullable"
         datetime created_at
         datetime updated_at
     }
@@ -43,10 +44,10 @@ erDiagram
 
     AI_CONSENT {
         bigint id PK
-        bigint user_id FK "unique"
+        bigint user_id FK, UK
         boolean is_granted
-        datetime granted_at "nullable"
-        datetime withdrawn_at "nullable"
+        datetime granted_at "Nullable"
+        datetime withdrawn_at "Nullable"
         string provider
         datetime updated_at
     }

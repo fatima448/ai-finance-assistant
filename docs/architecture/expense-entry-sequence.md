@@ -1,45 +1,59 @@
 ```mermaid
+
 sequenceDiagram
     actor User
     participant UI as Web UI
     participant API as Django API
     participant Auth as Auth and CSRF
     participant Expense as Expense Service
-    participant DB as PostgreSQL
     participant Dashboard as Dashboard Service
+    participant ORM as Django ORM
+    participant DB as PostgreSQL
 
     User->>UI: Enter expense details
     User->>UI: Select Save Expense
-    UI->>API: POST expense request
+    UI->>API: POST /api/expenses/
     API->>Auth: Validate session and CSRF token
 
     alt Session is missing or expired
         Auth-->>API: Authentication failed
-        API-->>UI: 401 response
+        API-->>UI: 403 Forbidden
         UI-->>User: Request sign in and retain values
+
     else CSRF validation fails
-        Auth-->>API: CSRF failed
-        API-->>UI: 403 response
-        UI-->>User: Show safe retry message
-    else Authenticated request
-        Auth->>Expense: Forward request with owner
+        Auth-->>API: CSRF validation failed
+        API-->>UI: 403 Forbidden
+        UI-->>User: Show retry message
+
+    else Session and CSRF are valid
+        Auth-->>API: Validation successful
+        API->>Expense: Process expense with authenticated owner
         Expense->>Expense: Validate amount, date, and category
-        alt Expense fields are invalid
-            Expense-->>API: Invalid request details
-            API-->>UI: 400 response with field errors
+
+        alt Expense data is invalid
+            Expense-->>API: Validation errors
+            API-->>UI: 400 Bad Request
             UI-->>User: Show errors and retain values
+
         else Expense data is valid
-            Expense->>DB: Save owner scoped expense
-            DB-->>Expense: Stored expense
+            Expense->>ORM: Save owner-scoped expense
+            ORM->>DB: Insert expense
+            DB-->>ORM: Expense stored
+            ORM-->>Expense: Created expense
+
             Expense->>Dashboard: Recalculate totals and alerts
-            Dashboard->>DB: Read expenses and budgets
-            DB-->>Dashboard: Matching records
-            Dashboard-->>Expense: Updated dashboard state
-            Expense-->>API: Created expense
-            API-->>UI: 201 response with expense and alerts
-            UI-->>User: Show saved expense and dashboard
+            Dashboard->>ORM: Retrieve user expenses and budgets
+            ORM->>DB: Query financial records
+            DB-->>ORM: Matching records
+            ORM-->>Dashboard: Financial data
+            Dashboard-->>Expense: Updated totals and alerts
+
+            Expense-->>API: Created expense and dashboard updates
+            API-->>UI: 201 Created
+            UI-->>User: Display saved expense and updated dashboard
         end
     end
+
 ```
 
 Figure: Sequence diagram for recording an expense. The browser submits an

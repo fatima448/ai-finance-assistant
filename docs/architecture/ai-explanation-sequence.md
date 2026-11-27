@@ -1,45 +1,73 @@
 ```mermaid
 sequenceDiagram
-    participant User
-    participant WebUI
-    participant DjangoAPI
-    participant ConsentPolicy
-    participant DashboardService
-    participant PromptBuilder
-    participant LLMAdapter
-    participant ExternalLLM
+    actor User
+    participant UI as Web UI
+    participant API as Django API
+    participant Auth as Auth and CSRF
+    participant AI as AI Service
+    participant ORM as Django ORM
+    participant Consent as Consent Policy
+    participant Dashboard as Dashboard Service
+    participant Prompt as Prompt Builder
+    participant Adapter as LLM Adapter
+    participant LLM as External LLM
 
-    User->>WebUI: Request monthly explanation
-    WebUI->>DjangoAPI: Send explanation request
-    DjangoAPI->>ConsentPolicy: Check consent
+    User->>UI: Request monthly explanation
+    UI->>API: Send explanation request
+    API->>Auth: Validate session and CSRF token
 
-    alt Consent is missing or withdrawn
-        ConsentPolicy-->>DjangoAPI: Consent not granted
-        DjangoAPI-->>WebUI: Consent required
-        WebUI-->>User: Show local explanation and consent option
-    else Consent is granted
-        ConsentPolicy-->>DjangoAPI: Consent granted
-        DjangoAPI->>DashboardService: Request monthly summary
-        DashboardService-->>DjangoAPI: Calculated figures
+    alt Security validation fails
+        Auth-->>API: Request rejected
+        API-->>UI: 403 Forbidden
+        UI-->>User: Show appropriate error message
 
-        alt Data is insufficient
-            DjangoAPI-->>WebUI: Insufficient data
-            WebUI-->>User: Explain that more expenses are needed
-        else Data is sufficient
-            DjangoAPI->>PromptBuilder: Build aggregated request
-            PromptBuilder->>LLMAdapter: Send explanation request
-            LLMAdapter->>ExternalLLM: Request explanation
+    else Security validation succeeds
+        Auth-->>API: Validation successful
+        API->>AI: Process explanation request
 
-            alt LLM is unavailable or response is invalid
-                ExternalLLM-->>LLMAdapter: Error response
-                LLMAdapter-->>DjangoAPI: AI request failed
-                DjangoAPI-->>WebUI: AI unavailable with local explanation
-                WebUI-->>User: Show fallback explanation
-            else LLM returns an explanation
-                ExternalLLM-->>LLMAdapter: explanation
-                LLMAdapter-->>DjangoAPI: Valid explanation
-                DjangoAPI-->>WebUI: Explanation and figures
-                WebUI-->>User: Display explanation and references
+        AI->>ORM: Retrieve user consent
+        ORM-->>AI: Consent status
+        AI->>Consent: Evaluate consent
+        Consent-->>AI: Consent decision
+
+        alt Consent is missing or withdrawn
+            AI-->>API: Consent required
+            API-->>UI: Consent required
+            UI-->>User: Show local summary and consent option
+
+        else Consent is granted
+            AI->>Dashboard: Request monthly financial summary
+            Dashboard->>ORM: Retrieve owner-scoped financial data
+            ORM-->>Dashboard: Financial records
+            Dashboard-->>AI: Calculated financial figures
+
+            AI->>AI: Check data sufficiency
+
+            alt Data is insufficient
+                AI-->>API: Insufficient financial data
+                API-->>UI: Insufficient data response
+                UI-->>User: Explain that more data is needed
+
+            else Data is sufficient
+                AI->>Prompt: Build aggregated prompt
+                Prompt-->>AI: Prepared prompt
+                AI->>Adapter: Request spending explanation
+                Adapter->>LLM: Send aggregated financial data
+                LLM-->>Adapter: Response or provider error
+                Adapter-->>AI: Result or failure
+
+                AI->>AI: Validate AI output
+
+                alt Provider failure or invalid output
+                    AI-->>API: Local fallback explanation
+                    API-->>UI: Fallback response
+                    UI-->>User: Display local explanation
+
+                else Valid AI explanation
+                    AI-->>API: Explanation and calculated figures
+                    API-->>UI: Successful response
+                    UI-->>User: Display financial explanation
+                end
             end
         end
     end
